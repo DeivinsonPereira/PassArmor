@@ -1,81 +1,84 @@
+import sqlite3
 from passlib.hash import sha256_crypt
 
-# Dictionary to store passwords
-passwords = {}
+
+# Function to create the user table in the SQLite database
+def create_user_table():
+    conn = sqlite3.connect('user.db')
+    cursor = conn.cursor()
+
+    cursor.execute('''CREATE TABLE IF NOT EXISTS users
+                      (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                       username TEXT UNIQUE,
+                       password TEXT)''')
+
+    conn.commit()
+    conn.close()
 
 
-def hash_password(password):
-    # Function to create a password hash using passlib's sha256_crypt
-    return sha256_crypt.hash(password)
+# Function to register a new user
+def register_user():
+    username = input("Enter a username: ")
+    password = input("Enter a password: ")
+
+    # Criptografa a senha
+    hashed_password = sha256_crypt.hash(password)
+
+    conn = sqlite3.connect('user.db')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)",
+                       (username, hashed_password))
+        conn.commit()
+        print("Registration successful.")
+    except sqlite3.IntegrityError:
+        print("Username already exists. Please choose a different one.")
+
+    conn.close()
 
 
-def verify_password(password, hashed_password):
-    # Function to verify a password using passlib's sha256_crypt
-    return sha256_crypt.verify(password, hashed_password)
-
-
-def store_password():
-    website = input("Enter the name of the website or service: ")
+# Function to log in
+def login():
     username = input("Enter the username: ")
-    password = input("Enter the password: ")
+    password = input("Enter a password: ")
 
-    # Encrypt the password
-    hashed_password = hash_password(password)
+    conn = sqlite3.connect('user.db')
+    cursor = conn.cursor()
 
-    # Store the password in the dictionary
-    passwords[website] = {
-        'username': username,
-        'password': hashed_password
-    }
-    print("Password stored successfully!")
+    cursor.execute("SELECT password FROM users WHERE username=?", (username,))
+    row = cursor.fetchone()
 
-
-def retrieve_password():
-    website = input("Enter the name of the website or service: ")
-
-    if website in passwords:
-        username = passwords[website]['username']
-        print(f"Username: {username}")
-    else:
-        print("Site not found in the password manager.")
-
-
-def verify_hashed_password():
-    # User data input for login
-    website = input("Enter the name of the website or service: ")
-    entered_username = input("Enter the username: ")
-    entered_password = input("Enter the password: ")
-
-    if website in passwords:
-        stored_hashed_password = passwords[website]['password']
-        if entered_username == passwords[website]['username']:
-            print("Correct username!")
-        if verify_password(entered_password, stored_hashed_password):
-            print("Correct password! Login successful.")
+    if row:
+        stored_password = row[0]
+        if sha256_crypt.verify(password, stored_password):
+            print("Successful login.")
         else:
-            print("Incorrect username or password!")
+            print("Incorrect password.")
     else:
-        print("Site not found in the password manager.")
+        print("Username not found.")
+
+    conn.close()
 
 
+# Main function
 def main():
+    create_user_table()
+
     while True:
         print("\nOptions:")
-        print("1. Store password")
-        print("2. Recover password")
-        print("3. Sign in")
-        print("4. Sign out")
+        print("1. Register")
+        print("2. Sign in")
+        print("3. Exit")
 
         choice = input("Choose an option: ")
 
         if choice == "1":
-            store_password()
+            register_user()
         elif choice == "2":
-            retrieve_password()
+            login()
         elif choice == "3":
-            verify_hashed_password()
-        elif choice == "4":
-            print("Exiting the password manager.")
+            print("Exiting the program.")
             break
         else:
             print("Invalid option. Please try again.")
@@ -83,4 +86,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
