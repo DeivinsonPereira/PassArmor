@@ -1,15 +1,17 @@
-import hashlib
+from passlib.hash import sha256_crypt
 
 # Dictionary to store passwords
 passwords = {}
 
 
 def hash_password(password):
-    # Function to create a password hash
+    # Function to create a password hash using passlib's sha256_crypt
+    return sha256_crypt.hash(password)
 
-    salt = "s4lT"  # A fixed value to add to the password before hashing it
-    password_hash = hashlib.sha256((password + salt).encode()).hexdigest()
-    return password_hash
+
+def verify_password(password, hashed_password):
+    # Function to verify a password using passlib's sha256_crypt
+    return sha256_crypt.verify(password, hashed_password)
 
 
 def store_password():
@@ -38,20 +40,22 @@ def retrieve_password():
         print("Site not found in the password manager.")
 
 
-def verify_password():
-    print(passwords)
+def verify_hashed_password():
     # User data input for login
     website = input("Enter the name of the website or service: ")
     entered_username = input("Enter the username: ")
     entered_password = input("Enter the password: ")
 
-    # Provided password passed through encryption
-    entered_hashed_password = hash_password(entered_password)
     if website in passwords:
-        if entered_hashed_password == passwords[website]['password']:
+        stored_hashed_password = passwords[website]['password']
+        if entered_username == passwords[website]['username']:
+            print("Correct username!")
+        if verify_password(entered_password, stored_hashed_password):
             print("Correct password! Login successful.")
         else:
             print("Incorrect username or password!")
+    else:
+        print("Site not found in the password manager.")
 
 
 def main():
@@ -69,7 +73,7 @@ def main():
         elif choice == "2":
             retrieve_password()
         elif choice == "3":
-            verify_password()
+            verify_hashed_password()
         elif choice == "4":
             print("Exiting the password manager.")
             break
