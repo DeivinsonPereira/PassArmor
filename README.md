@@ -26,3 +26,53 @@ Este é um projeto de registro e login em Python que utiliza uma base de dados S
 - Email Validator para validar endereços de e-mail
 - Secrets para gerar "salt" de forma segura
 - Expressões regulares (regex) para validar senhas
+
+# Screenshots (Imagens do Projeto)
+Aqui estão alguns screenshots do projeto em funcionamento:
+
+## 1. Registro:
+
+![registro](https://github.com/DeivinsonPereira/PassArmor/blob/main/images/registration.png)
+
+## 2. Falha no registro
+
+![falha_no_registro](https://github.com/DeivinsonPereira/PassArmor/blob/main/images/invalid_data.png)
+
+## 3. Login de usuário
+
+![login](https://github.com/DeivinsonPereira/PassArmor/blob/main/images/successful_login.png)
+
+## 4. Segurança
+
+![seguranca](https://github.com/DeivinsonPereira/PassArmor/blob/main/images/account_locked.png)
+
+# Como executar o projeto
+
+``` shell
+
+# Clone o repositório para o seu ambiente local:
+git clone https://github.com/DeivinsonPereira/PassArmor.git
+
+# Crie um ambiente virtual (opcional, mas recomendado):
+python -m venv venv
+
+# Ative o ambiente virtual:
+
+No Windows:
+venv\Scripts\activate
+
+No macOS e Linux:
+source venv/bin/activate
+
+# Instale as dependências:
+pip install -r requirements.txt
+
+#Execute o programa:
+python main.py
+
+Siga as instruções exibidas no console para registrar usuários e fazer login.
+
+```
+
+## Contribuição
+Contribuições são bem-vindas! Sinta-se à vontade para abrir problemas (issues) e enviar pull requests com melhorias, correções de bugs ou recursos adicionais.
