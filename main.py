@@ -6,6 +6,7 @@ import time
 import re
 
 MAX_LOGIN_ATTEMPTS = 3
+LOCK_DURATION = 300
 
 
 def create_user_table():
@@ -20,10 +21,9 @@ def create_user_table():
                            salt TEXT,
                            login_attempts INTEGER DEFAULT 0,
                            last_attempt_timestamp REAL DEFAULT 0,
-                           locked INTEGER DEFAULT 0)''')
+                           locked_until REAL DEFAULT 0)''')
 
         conn.commit()
-        conn.close()
 
 
 # Generates a random salt
@@ -118,17 +118,19 @@ def login():
     conn = sqlite3.connect('user.db')
     cursor = conn.cursor()
 
-    cursor.execute("SELECT id, password, salt, locked, login_attempts FROM users WHERE username=?", (username,))
+    cursor.execute("SELECT id, password, salt, locked_until, login_attempts FROM users WHERE username=?", (username,))
     row = cursor.fetchone()
 
     if row:
-        user_id, stored_password, salt, locked, login_attempts = row
+        user_id, stored_password, salt, locked_until, login_attempts = row
 
-        if locked:
-            print("Account is locked. Please contact the administrator.")
+        if locked_until > time.time():
+            remaining_time = int(locked_until - time.time())
+            print(f"Account is locked. Try again after {remaining_time} seconds.")
+            return
         elif sha256_crypt.verify(salt + password, stored_password):
             # Successful login, login attempts reset
-            cursor.execute("UPDATE users SET login_attempts = 0 WHERE id=?", (user_id,))
+            cursor.execute("UPDATE users SET login_attempts = 0, locked_until = 0 WHERE id=?", (user_id,))
             conn.commit()
             print("Successful login.")
         else:
@@ -140,10 +142,10 @@ def login():
             print("Incorrect password.")
 
             if login_attempts >= MAX_LOGIN_ATTEMPTS:
-                # Locks the account after 3 unsuccessful login attempts
-                cursor.execute("UPDATE users SET locked = 1 WHERE id=?", (user_id,))
+                locked_until = time.time() + LOCK_DURATION
+                cursor.execute("UPDATE users SET locked_until = ? WHERE id=?", (locked_until, user_id))
                 conn.commit()
-                print("Account locked. Please contact the administrator.")
+                print("Account locked. Try again later.")
 
     else:
         print("Username not found.")
