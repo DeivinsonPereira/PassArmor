@@ -1,8 +1,11 @@
 import sqlite3
 from passlib.hash import sha256_crypt
+import secrets
+import time
+
+MAX_LOGIN_ATTEMPTS = 3
 
 
-# Function to create the user table in the SQLite database
 def create_user_table():
     conn = sqlite3.connect('user.db')
     cursor = conn.cursor()
@@ -10,26 +13,38 @@ def create_user_table():
     cursor.execute('''CREATE TABLE IF NOT EXISTS users
                       (id INTEGER PRIMARY KEY AUTOINCREMENT,
                        username TEXT UNIQUE,
-                       password TEXT)''')
+                       password TEXT,
+                       salt TEXT,
+                       login_attempts INTEGER DEFAULT 0,
+                       last_attempt_timestamp REAL DEFAULT 0,
+                       locked INTEGER DEFAULT 0)''')
 
     conn.commit()
     conn.close()
 
 
-# Function to register a new user
+# Generates a random salt
+def generate_salt():
+    return secrets.token_hex(16)
+
+
 def register_user():
     username = input("Enter a username: ")
     password = input("Enter a password: ")
 
-    # Criptografa a senha
-    hashed_password = sha256_crypt.hash(password)
+    salt = generate_salt()
+
+    salted_password = salt + password
+
+    # Encryption of the new password
+    hashed_password = sha256_crypt.hash(salted_password)
 
     conn = sqlite3.connect('user.db')
     cursor = conn.cursor()
 
     try:
-        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)",
-                       (username, hashed_password))
+        cursor.execute("INSERT INTO users (username, password, salt) VALUES (?, ?, ?)",
+                       (username, hashed_password, salt))
         conn.commit()
         print("Registration successful.")
     except sqlite3.IntegrityError:
@@ -38,7 +53,6 @@ def register_user():
     conn.close()
 
 
-# Function to log in
 def login():
     username = input("Enter the username: ")
     password = input("Enter a password: ")
@@ -46,22 +60,40 @@ def login():
     conn = sqlite3.connect('user.db')
     cursor = conn.cursor()
 
-    cursor.execute("SELECT password FROM users WHERE username=?", (username,))
+    cursor.execute("SELECT id, password, salt, locked, login_attempts FROM users WHERE username=?", (username,))
     row = cursor.fetchone()
 
     if row:
-        stored_password = row[0]
-        if sha256_crypt.verify(password, stored_password):
+        user_id, stored_password, salt, locked, login_attempts = row
+
+        if locked:
+            print("Account is locked. Please contact the administrator.")
+        elif sha256_crypt.verify(salt + password, stored_password):
+            # Successful login, login attempts reset
+            cursor.execute("UPDATE users SET login_attempts = 0 WHERE id=?", (user_id,))
+            conn.commit()
             print("Successful login.")
         else:
+            # Incorrect password, increase login attempts counter
+            login_attempts += 1
+            cursor.execute("UPDATE users SET login_attempts = ?, last_attempt_timestamp = ? WHERE id=?",
+                           (login_attempts, time.time(), user_id))
+            conn.commit()
             print("Incorrect password.")
+
+            if login_attempts >= MAX_LOGIN_ATTEMPTS:
+                # Locks the account after 3 unsuccessful login attempts
+                cursor.execute("UPDATE users SET locked = 1 WHERE id=?", (user_id,))
+                conn.commit()
+                print("Account locked. Please contact the administrator.")
+
     else:
         print("Username not found.")
 
     conn.close()
 
 
-# Main function
+# Função principal
 def main():
     create_user_table()
 
