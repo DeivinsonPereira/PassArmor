@@ -9,20 +9,21 @@ MAX_LOGIN_ATTEMPTS = 3
 
 
 def create_user_table():
-    conn = sqlite3.connect('user.db')
-    cursor = conn.cursor()
+    with sqlite3.connect('user.db') as conn:
+        cursor = conn.cursor()
+        conn = sqlite3.connect('user.db')
 
-    cursor.execute('''CREATE TABLE IF NOT EXISTS users
-                      (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                       username TEXT UNIQUE,
-                       password TEXT,
-                       salt TEXT,
-                       login_attempts INTEGER DEFAULT 0,
-                       last_attempt_timestamp REAL DEFAULT 0,
-                       locked INTEGER DEFAULT 0)''')
+        cursor.execute('''CREATE TABLE IF NOT EXISTS users
+                          (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                           username TEXT UNIQUE,
+                           password TEXT,
+                           salt TEXT,
+                           login_attempts INTEGER DEFAULT 0,
+                           last_attempt_timestamp REAL DEFAULT 0,
+                           locked INTEGER DEFAULT 0)''')
 
-    conn.commit()
-    conn.close()
+        conn.commit()
+        conn.close()
 
 
 # Generates a random salt
