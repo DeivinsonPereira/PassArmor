@@ -1,6 +1,6 @@
 # PassArmor
 
-Este é um projeto simples de registro e login em Python que utiliza uma base de dados SQLite para armazenar informações de usuários. O sistema foi desenvolvido para permitir que os usuários se registrem com um endereço de e-mail válido e uma senha forte, e posteriormente façam login em suas contas.
+Este é um projeto de registro e login em Python que utiliza uma base de dados SQLite para armazenar informações de usuários. O sistema foi desenvolvido para permitir que os usuários se registrem com um endereço de e-mail válido e uma senha forte, e posteriormente façam login em suas contas.
 
 ## Funcionalidades
 
