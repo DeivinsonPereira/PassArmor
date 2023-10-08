@@ -1,5 +1,6 @@
 import sqlite3
 from passlib.hash import sha256_crypt
+from email_validator import validate_email, EmailNotValidError
 import secrets
 import time
 import re
@@ -29,7 +30,16 @@ def generate_salt():
     return secrets.token_hex(16)
 
 
-# Função para validar a força da senha
+# Check the email format
+def is_valid_email(username):
+    try:
+        validate_email(username)
+        return True
+    except EmailNotValidError:
+        return False
+
+
+# To validate the password strength
 def is_strong_password(password):
     if len(password) < 8:
         return False
@@ -39,22 +49,45 @@ def is_strong_password(password):
         return False
     if not any(char.isdigit() for char in password):
         return False
-    if not re.search(r'[!@#$%^&*]', password):
+    if not re.search(r'[!@#$%^&*.]', password):
         return False
     return True
 
 
+def get_email_validation_message(username):
+    if is_valid_email(username):
+        return None
+    return "Invalid email address."
+
+
+def get_password_validation_message(password):
+    if is_strong_password(password):
+        return None
+    return (
+        "Password is not strong enough. Passwords must have at least 8 characters, "
+        "including at least one uppercase letter, one lowercase letter, one digit, "
+        "and one special character."
+    )
+
+
 def register_user():
-    username = input("Enter a username: ")
     while True:
-        password = input("Enter a password: ")
-        if is_strong_password(password):
+        username = input("Enter an email address: ")
+        email_validation_message = get_email_validation_message(username)
+
+        if email_validation_message is None:
             break
         else:
-            print(
-                "Password is not strong enough. Passwords must have at least 8 characters, "
-                "including at least one uppercase letter, one lowercase letter, one digit, "
-                "and one special character.")
+            print(email_validation_message)
+
+    while True:
+        password = input("Enter a password: ")
+        password_validation_message = get_password_validation_message(password)
+
+        if password_validation_message is None:
+            break
+        else:
+            print(password_validation_message)
 
     salt = generate_salt()
 
@@ -72,7 +105,7 @@ def register_user():
         conn.commit()
         print("Registration successful.")
     except sqlite3.IntegrityError:
-        print("Username already exists. Please choose a different one.")
+        print("Username (email) already exists or is invalid. Please choose a different one.")
 
     conn.close()
 
