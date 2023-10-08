@@ -2,6 +2,7 @@ import sqlite3
 from passlib.hash import sha256_crypt
 import secrets
 import time
+import re
 
 MAX_LOGIN_ATTEMPTS = 3
 
@@ -28,9 +29,32 @@ def generate_salt():
     return secrets.token_hex(16)
 
 
+# Função para validar a força da senha
+def is_strong_password(password):
+    if len(password) < 8:
+        return False
+    if not any(char.isupper() for char in password):
+        return False
+    if not any(char.islower() for char in password):
+        return False
+    if not any(char.isdigit() for char in password):
+        return False
+    if not re.search(r'[!@#$%^&*]', password):
+        return False
+    return True
+
+
 def register_user():
     username = input("Enter a username: ")
-    password = input("Enter a password: ")
+    while True:
+        password = input("Enter a password: ")
+        if is_strong_password(password):
+            break
+        else:
+            print(
+                "Password is not strong enough. Passwords must have at least 8 characters, "
+                "including at least one uppercase letter, one lowercase letter, one digit, "
+                "and one special character.")
 
     salt = generate_salt()
 
