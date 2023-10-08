@@ -153,7 +153,6 @@ def login():
     conn.close()
 
 
-# Função principal
 def main():
     create_user_table()
 
